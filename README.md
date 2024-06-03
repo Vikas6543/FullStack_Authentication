@@ -7,7 +7,7 @@
 - Run `npm install` to install dependencies.
 - Configure your `.env` file.
 - Start the server with `npm start` this will start the server.
-- Navigate to client folder and run `npm start` this will start the client.
+- Navigate to client folder and run `npm run dev` this will start the client.
 
 ## Features
 
