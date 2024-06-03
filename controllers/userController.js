@@ -107,3 +107,38 @@ module.exports.verifyEmail = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error });
   }
 };
+
+// login user
+module.exports.login = async (req, res) => {
+  const { email, password } = req.body;
+
+  // check if all fields are filled
+  if (!email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+    const user = await UserModel.findOne({ email });
+
+    // check if user exists
+    if (!user) {
+      return res.status(404).json({ message: 'Invalid email or password...' });
+    }
+
+    // check if password is correct
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid email or password...' });
+    }
+
+    // check if user is verified
+    if (!user.isVerified) {
+      return res.status(400).json({
+        message: 'Your account is not verified, please verify first...',
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
