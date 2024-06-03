@@ -1,5 +1,7 @@
 const UserModel = require('../models/userModel');
+const emailVerficationModel = require('../models/emailVerficationModel');
 const bcrypt = require('bcrypt');
+const sendVerificationOTP = require('../utils/emailVerfication');
 
 // register user
 module.exports.register = async (req, res) => {
@@ -31,11 +33,77 @@ module.exports.register = async (req, res) => {
     // save user
     const savedUser = await newUser.save();
 
+    // send email verification
+    sendVerificationOTP(savedUser);
+
     res
       .status(201)
       .json({ message: 'User registered successfully', user: savedUser });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// user email verification
+module.exports.verifyEmail = async (req, res) => {
+  const { email, otp } = req.body;
+
+  // check if all fields are filled
+  if (!email || !otp) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+    const user = await UserModel.findOne({ email });
+
+    // check if user exists
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: 'User with this email does not exist...' });
+    }
+
+    // check if email is already verified
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
+
+    const emailVerfication = await emailVerficationModel.findOne({
+      userId: user._id,
+      otp,
+    });
+
+    // check if otp is valid
+    if (!emailVerfication) {
+      if (!user.isVerified) {
+        sendVerificationOTP(user);
+        return res
+          .status(400)
+          .json({ message: 'Invalid OTP, new OTP sent to your email...' });
+      }
+
+      return res.status(400).json({ message: 'Invalid OTP...' });
+    }
+
+    // if otp is valid then check expiration
+    const currentTime = new Date();
+    const expirationTime = new Date(
+      emailVerfication.createdAt.getTime() + 15 * 60 * 1000
+    );
+    if (currentTime > expirationTime) {
+      await sendVerificationOTP(user);
+      return res.status(400).json({
+        message: 'OTP expired, new OTP sent to your email...',
+      });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully...' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
   }
 };
