@@ -2,6 +2,7 @@ const UserModel = require('../models/userModel');
 const emailVerficationModel = require('../models/emailVerficationModel');
 const bcrypt = require('bcrypt');
 const sendVerificationOTP = require('../utils/emailVerfication');
+const generateTokens = require('../utils/generateToken');
 
 // register user
 module.exports.register = async (req, res) => {
@@ -137,6 +138,36 @@ module.exports.login = async (req, res) => {
         message: 'Your account is not verified, please verify first...',
       });
     }
+
+    // generate tokens
+    const { accessToken, refreshToken } = await generateTokens(user);
+
+    // set access token to cookies
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 12 * 60 * 60 * 1000,
+    });
+
+    // set refresh token to cookies
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      message: 'Login successful',
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+        roles: user.roles,
+      },
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      is_authenticated: true,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Internal server error', error: error });
