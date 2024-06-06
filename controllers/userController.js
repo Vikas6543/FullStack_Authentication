@@ -146,14 +146,14 @@ module.exports.login = async (req, res) => {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      maxAge: 12 * 60 * 60 * 1000,
+      maxAge: new Date(new Date().getTime() + 12 * 60 * 60 * 1000),
     });
 
     // set refresh token to cookies
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     });
 
     res.status(200).json({
