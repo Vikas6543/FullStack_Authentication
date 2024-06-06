@@ -1,8 +1,10 @@
 const UserModel = require('../models/userModel');
 const emailVerficationModel = require('../models/emailVerficationModel');
+const refreshTokenModel = require('../models/refreshToken');
 const bcrypt = require('bcrypt');
 const sendVerificationOTP = require('../utils/emailVerfication');
 const generateTokens = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
 
 // register user
 module.exports.register = async (req, res) => {
@@ -158,6 +160,80 @@ module.exports.login = async (req, res) => {
 
     res.status(200).json({
       message: 'Login successful',
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+        roles: user.roles,
+      },
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      is_authenticated: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
+
+// get new access token from refresh token
+module.exports.getAccessToken = async (req, res) => {
+  try {
+    const oldRefreshToken = req.cookies.refresh_token;
+
+    // check if refresh token exists in database
+    const databaseRefreshToken = await refreshTokenModel.findOne({
+      token: oldRefreshToken,
+    });
+
+    if (!databaseRefreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // jwt verify
+    const tokenDetail = jwt.verify(
+      oldRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    if (!tokenDetail) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // find user based on id
+    const user = await UserModel.findById(tokenDetail.payload.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userRefreshToken = await refreshTokenModel.findOne({
+      userId: tokenDetail.payload.id,
+    });
+
+    if (!userRefreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // generate tokens
+    const { accessToken, refreshToken } = await generateTokens(user);
+
+    // set access token to cookies
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: new Date(new Date().getTime() + 12 * 60 * 60 * 1000),
+    });
+
+    // set refresh token to cookies
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+    });
+
+    res.status(200).json({
+      message: 'Access token generated successfully',
       user: {
         name: user.name,
         email: user.email,
