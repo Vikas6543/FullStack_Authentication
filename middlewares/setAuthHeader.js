@@ -1,5 +1,4 @@
 // ********************* just for testing purpose
-
 const jwt = require('jsonwebtoken');
 
 const setAuthHeader = async (req, res, next) => {

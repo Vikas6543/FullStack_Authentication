@@ -8,7 +8,7 @@ const {
   getMyProfileDetails,
 } = require('../controllers/userController');
 const passport = require('passport');
-const setAuthHeader = require('../middlewares/setAuthHeader');
+const accessTokenAutoRefresh = require('../middlewares/tokenAutoRefresh');
 
 // register route => post method
 router.post('/register', register);
@@ -25,7 +25,7 @@ router.post('/get-access-token', getAccessToken);
 // get my profile details => get method (protected route)
 router.get(
   '/my-profile',
-  setAuthHeader,
+  accessTokenAutoRefresh,
   passport.authenticate('jwt', { session: false }),
   getMyProfileDetails
 );
