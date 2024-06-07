@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const sendVerificationOTP = require('../utils/emailVerfication');
 const generateTokens = require('../utils/generateToken');
 const jwt = require('jsonwebtoken');
+const transporter = require('../config/emailConfig');
 
 // register user
 module.exports.register = async (req, res) => {
@@ -292,6 +293,52 @@ module.exports.changePassword = async (req, res) => {
       password: hashedPassword,
     });
     res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
+
+// send password reset email
+module.exports.passwordResetLink = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: 'Email is required to reset the password' });
+  }
+
+  try {
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: 'User with this email does not exist...' });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: '15m',
+      }
+    );
+
+    const resetLink = `${process.env.FRONTEND_HOST}/reset-password/${token}`;
+
+    // send email
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: user.email,
+      subject: 'Reset Your Password',
+      html: `<h2>Dear ${user.name}, </h2>
+    <p>Please reset your password by clicking on the following link: <a href="${resetLink}">Click here</a></p>
+    <p>Please make sure this link is valid for only 15 minutes.</p>`,
+    });
+
+    res.status(200).json({ message: 'Password reset email sent successfully' });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Internal server error', error: error });

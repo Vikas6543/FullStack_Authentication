@@ -8,6 +8,7 @@ const {
   getMyProfileDetails,
   logout,
   changePassword,
+  passwordResetLink,
 } = require('../controllers/userController');
 const passport = require('passport');
 const accessTokenAutoRefresh = require('../middlewares/tokenAutoRefresh');
@@ -42,5 +43,8 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   changePassword
 );
+
+// password reset link route => post method
+router.post('/password-reset-link', passwordResetLink);
 
 module.exports = router;
