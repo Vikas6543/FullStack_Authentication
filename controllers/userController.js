@@ -259,3 +259,41 @@ module.exports.getMyProfileDetails = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error });
   }
 };
+
+// logout
+module.exports.logout = async (req, res) => {
+  try {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
+
+// change password
+module.exports.changePassword = async (req, res) => {
+  const { password, confirmPassword } = req.body;
+
+  if (!password || !confirmPassword) {
+    return res.status(400).json({ message: 'Both fields are required' });
+  }
+
+  if (password !== confirmPassword) {
+    return res
+      .status(400)
+      .json({ message: 'Password & confirm password do not match' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await UserModel.findByIdAndUpdate(req.user._id, {
+      password: hashedPassword,
+    });
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};

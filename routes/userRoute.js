@@ -6,6 +6,8 @@ const {
   login,
   getAccessToken,
   getMyProfileDetails,
+  logout,
+  changePassword,
 } = require('../controllers/userController');
 const passport = require('passport');
 const accessTokenAutoRefresh = require('../middlewares/tokenAutoRefresh');
@@ -28,6 +30,17 @@ router.get(
   accessTokenAutoRefresh,
   passport.authenticate('jwt', { session: false }),
   getMyProfileDetails
+);
+
+// logout route => get method
+router.get('/logout', logout);
+
+// change password route => post method
+router.post(
+  '/change-password',
+  accessTokenAutoRefresh,
+  passport.authenticate('jwt', { session: false }),
+  changePassword
 );
 
 module.exports = router;
