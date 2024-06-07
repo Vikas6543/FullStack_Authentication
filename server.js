@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/connectDB');
 const passport = require('passport');
+require('./config/passport');
 
 dotenv.config();
 

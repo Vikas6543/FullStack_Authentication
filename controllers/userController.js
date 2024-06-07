@@ -148,14 +148,14 @@ module.exports.login = async (req, res) => {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      maxAge: new Date(new Date().getTime() + 12 * 60 * 60 * 1000),
+      maxAge: 20 * 1000,
     });
 
     // set refresh token to cookies
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: true,
-      maxAge: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -222,14 +222,14 @@ module.exports.getAccessToken = async (req, res) => {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      maxAge: new Date(new Date().getTime() + 12 * 60 * 60 * 1000),
+      maxAge: 20 * 1000,
     });
 
     // set refresh token to cookies
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: true,
-      maxAge: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -244,6 +244,16 @@ module.exports.getAccessToken = async (req, res) => {
       refresh_token: refreshToken,
       is_authenticated: true,
     });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
+
+// get my profile details
+module.exports.getMyProfileDetails = async (req, res) => {
+  try {
+    res.send(req.user);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Internal server error', error: error });

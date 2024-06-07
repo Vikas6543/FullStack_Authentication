@@ -15,7 +15,7 @@ const generateTokens = async (user) => {
       },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiresIn: '12h',
+        expiresIn: '20s',
       }
     );
 
