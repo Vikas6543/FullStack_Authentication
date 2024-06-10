@@ -9,6 +9,7 @@ const {
   logout,
   changePassword,
   passwordResetLink,
+  resetPassword,
 } = require('../controllers/userController');
 const passport = require('passport');
 const accessTokenAutoRefresh = require('../middlewares/tokenAutoRefresh');
@@ -46,5 +47,8 @@ router.post(
 
 // password reset link route => post method
 router.post('/password-reset-link', passwordResetLink);
+
+// reset password route => post method
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

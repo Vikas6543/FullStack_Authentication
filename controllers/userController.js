@@ -326,7 +326,7 @@ module.exports.passwordResetLink = async (req, res) => {
       }
     );
 
-    const resetLink = `${process.env.FRONTEND_HOST}/reset-password/${token}`;
+    const resetLink = `${process.env.FRONTEND_HOST}/resetPassword/${token}`;
 
     // send email
     await transporter.sendMail({
@@ -338,8 +338,48 @@ module.exports.passwordResetLink = async (req, res) => {
     <p>Please make sure this link is valid for only 15 minutes.</p>`,
     });
 
-    res.status(200).json({ message: 'Password reset email sent successfully' });
+    res.status(200).json({
+      message: 'Password reset link has been sent to your email successfully',
+    });
   } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error', error: error });
+  }
+};
+
+// reset password using token
+module.exports.resetPassword = async (req, res) => {
+  const { password, confirmPassword, token } = req.body;
+
+  if (!password || !confirmPassword) {
+    return res
+      .status(400)
+      .json({ message: 'Both password fields are required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const user = await UserModel.findById(decoded.userId);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: 'User with this email does not exist...' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await UserModel.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+    });
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res
+        .status(400)
+        .json({ message: 'Password reset link has been expired' });
+    }
     console.log(error);
     res.status(500).json({ message: 'Internal server error', error: error });
   }
