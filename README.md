@@ -11,7 +11,7 @@
 
 ## Features
 
-- Register and Login
+- Register and a Login
 - Google Authentication
 - OTP Email Verfication
 - Access & Refresh Tokens
